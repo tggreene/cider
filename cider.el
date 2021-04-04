@@ -1478,12 +1478,17 @@ of remote SSH hosts."
 (defun cider-locate-running-nrepl-ports (&optional dir)
   "Locate ports of running nREPL servers.
 When DIR is non-nil also look for nREPL port files in DIR.  Return a list
-of list of the form (project-dir port)."
+of list of the form (project-dir port originator)"
   (let* ((paths (cider--running-nrepl-paths))
-         (proj-ports (mapcar (lambda (d)
-                               (when-let* ((port (and d (nrepl-extract-port (cider--file-path d)))))
-                                 (list (file-name-nondirectory (directory-file-name d)) port)))
-                             (cons (clojure-project-dir dir) paths))))
+         (proj-ports (seq-mapcat
+                      (lambda (d)
+                        (when-let* ((ports (and d (nrepl-extract-ports (cider--file-path d)))))
+                          (mapcar (lambda (port)
+                                    (list (file-name-nondirectory (directory-file-name d))
+                                          (cdr port)
+                                          (car port)))
+                                  ports)))
+                      (cons (clojure-project-dir dir) paths))))
     (seq-uniq (delq nil proj-ports))))
 
 (defun cider--running-nrepl-paths ()

@@ -235,12 +235,15 @@ PARAMS is as in `nrepl-make-buffer-name'."
   "Return t if HOST is local."
   (string-match-p tramp-local-host-regexp host))
 
-(defun nrepl-extract-port (dir)
-  "Read port from .nrepl-port, nrepl-port or target/repl-port files in directory DIR."
-  (or (nrepl--port-from-file (expand-file-name "repl-port" dir))
-      (nrepl--port-from-file (expand-file-name ".nrepl-port" dir))
-      (nrepl--port-from-file (expand-file-name "target/repl-port" dir))
-      (nrepl--port-from-file (expand-file-name ".shadow-cljs/nrepl.port" dir))))
+(defun nrepl-extract-ports (dir)
+  "Read ports from .nrepl-port, nrepl-port or target/repl-port files in
+directory DIR. returns an alist with originator as the car (a normal
+clojure process like lein or shadow-cljs)"
+  (seq-filter (lambda (x) (stringp (cdr x)))
+              `(("clojure" . ,(or (nrepl--port-from-file (expand-file-name "repl-port" dir))
+                                  (nrepl--port-from-file (expand-file-name ".nrepl-port" dir))
+                                  (nrepl--port-from-file (expand-file-name "target/repl-port" dir))))
+                ("shadow-cljs" . ,(nrepl--port-from-file (expand-file-name ".shadow-cljs/nrepl.port" dir))))))
 
 (defun nrepl--port-from-file (file)
   "Attempts to read port from a file named by FILE."
